@@ -35,7 +35,7 @@ if (tmp==NULL){
     printf("Failed to allocate memory. Will exit");
     return 1;
 }
-//Parse the input and store flaoting point numbers in array
+//Parse the input and store floating point numbers in array
 newnum = 1;
 for(index=0;index<MAX_INPUT;index++){
     if(newnum==1){
@@ -52,7 +52,7 @@ for(index=0;index<MAX_INPUT;index++){
         number = atof(t);
         total+=number;    //add the number
         tmp=&number;    //store the number in the array
-        tmp++;
+        tmp=tmp+1;
         newnum = 1;    //now, set flag for new number
         len = 0;    //set next number's length to 0
         if(in[index] == '\n'){
@@ -62,6 +62,12 @@ for(index=0;index<MAX_INPUT;index++){
         newnum = 0;
         len++;
     }
+}
+//Display all the numbers that were entered.
+//TODO****NOT WORKING****
+for(index=counter;index>0;index--){
+    tmp=tmp-1;
+    printf("%f\n",*tmp);
 }
 printf("The average is %f\n",(total/counter));
 return 0;
