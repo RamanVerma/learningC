@@ -2,9 +2,13 @@
 It then stores them in memory and displays all of them sorted by
 their length.
 */
+/*
+Known Issue: If I enter a string longer than MAX_LEN_INPUT,
+The code breaks it into multiple strings each with max len
+MAX_LEN_INPUT. Something to deal with the getchar()function.
+*/
 
 #include<stdio.h>
-#include<stdbool.h>
 #include<string.h>
 #include<stdlib.h>
 
@@ -12,7 +16,6 @@ their length.
 #define MAX_LEN_INPUT 50    //maximum length for each proverb
 
 int main(){
-bool done=false;    //flag to indiacate that user has finished entering her input
 int num=1;    //counter for the number of proverbs entered
 char buffer[MAX_LEN_INPUT]={'\0'};    //array of char to store user input
 int index=0;
@@ -22,12 +25,15 @@ int iterator=0;    //iterator for the array of Proverbs
 char *temp2=NULL;    //convenience pointer
 
 //Receive input from the user and store it in memory
-while(!done && num<=MAX_PROVERBS){
+while(num<=MAX_PROVERBS){
     index=0;
-    while((buffer[index]=getchar())!='\n' && index<MAX_LEN_INPUT){
+    while((buffer[index]=getchar())!='\n' && index<MAX_LEN_INPUT-1){
         index++;
     }
     buffer[index]='\0';    //replacing the newline char with null to use strlen accurately
+    if(index==0){    //indicates that the user has finished entering the input
+        break;
+    }
     temp=(char *)malloc(strlen(buffer)*sizeof(char));    //allocate memory to store the input string
     if(temp==NULL){
         printf("System could not allocate memory. Program will exit.\n");
@@ -43,15 +49,13 @@ while(!done && num<=MAX_PROVERBS){
                 arrayOfProverbs[index]=arrayOfProverbs[index-1];
             }
             arrayOfProverbs[iterator]=temp;    //place the address of temp at correct position in the array
+            break;
         }
     }
     num++;
-    if(index==0){    //indicates that the user has finished entering the input
-        done=true;
-    }
 }
 //Display the sorted array of Proverbs
-for(iterator=0;iterator<num;iterator++){
+for(iterator=0;iterator<num-1;iterator++){
     printf("%s\n",arrayOfProverbs[iterator]);
 }
 }
