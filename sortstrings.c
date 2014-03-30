@@ -10,25 +10,28 @@
 
 bool str_in(char **,int *);	/* function prototype for string input */
 void str_sort(const char *[], int);	/* function prototype for string sort */
-void swap(void **p1, void **p2);	/* swap two pointers */
+void swap(const char **p1, const char **p2);	/* swap two pointers */
 void str_out(char *[], int);	/* function prototype for string output */
 
-const size_t BUFFER_LEN = 256;
-const size_t NUM_P = 50;
+const size_t BUFFER_LEN = 256;	/* Max length for each string */
+const size_t NUM_P = 50;	/* Max number of strings */
 
 /*
 * main function
 */
 int main(){
-int numofstr = 0;
-char **arrayofstr = NULL;
-arrayofstr = (char **)malloc(sizeof(char *)*NUM_P);	/* Allocating an array of char * */
-if(arrayofstr==NULL){
-	printf("main: Error while allocating memory. Exiting now!");
-    exit(1);
-}
-while(str_in(arrayofstr,&numofstr));	/* Calls function to accept strings from user */
-str_out(arrayofstr,numofstr);
+	int numofstr = 0;
+	char **arrayofstr = NULL;
+	arrayofstr = (char **)malloc(sizeof(char *)*NUM_P);	/* Allocating an array
+																 of char * */
+	if(arrayofstr==NULL){
+		printf("main: Error while allocating memory. Exiting now!");
+    	exit(1);
+	}
+	while(str_in(arrayofstr,&numofstr));	/* Calls function to accept strings
+																 from user */
+	str_sort(arrayofstr,numofstr);
+	str_out(arrayofstr,numofstr);
 }
 
 /*
@@ -42,32 +45,36 @@ str_out(arrayofstr,numofstr);
 * terminated by calling exit()
 */
 bool str_in(char ** arrayofstr, int *numofstr){
-bool ret = true;
-int index = 0;
-char *str = NULL;
-str = (char *)malloc(sizeof(char)*BUFFER_LEN);	/* Allocate memory for the input string */
-if(!str){
-	printf("str_in: Error while allocating memory. Exiting now!");
-    exit(1);
-}
-for(index=0;index<NUM_P;index++){	/* Store the allocated block of memory in a char** array */
-if(*arrayofstr==NULL){
-	*arrayofstr = str;
-	*numofstr = index+1;
-	break;
-}else{
-	arrayofstr++;
-}
-}
-index=0;
-while((*str++=getchar())!='\n' && index++ < (BUFFER_LEN-1));	/* Accept user input */
-if(index==0){
-	*numofstr -= 1;
-	return false;	/* user entered a just new line character */
-}else{
-	*str='\0';	/* add an ending null char to the string */
-	return true;
-}
+	bool ret = true;
+	int index = 0;
+	char *str = NULL;
+	str = (char *)malloc(sizeof(char)*BUFFER_LEN);	/* Allocate memory for the
+															 input string */
+	if(!str){
+		printf("str_in: Error while allocating memory. Exiting now!");
+		exit(1);
+	}
+	for(index=0;index<NUM_P;index++){	/* Store the allocated block of memory
+														 in a char** array */
+		if(*arrayofstr==NULL){
+			*arrayofstr = str;
+			*numofstr = index+1;
+			break;
+		}else{
+			arrayofstr++;
+		}
+	}
+	index=0;
+	while((*str++=getchar())!='\n' && index++ < (BUFFER_LEN-1));	/* Accept 
+																user input */
+	if(index==0){
+		*numofstr -= 1;
+		return false;	/* user entered a just new line character indicating
+															 end of input */
+	}else{
+		*str='\0';	/* add an ending null char to the string */
+		return true;
+	}
 }
 
 /*
@@ -77,10 +84,10 @@ if(index==0){
 * Return: void
 */
 void str_out(char * arrayofstr[], int count){
-int index=0;
-for(index=0;index<count && index<NUM_P;index++){
-	printf("%s\n",arrayofstr[index]);
-}
+	int index=0;
+	for(index=0;index<count && index<NUM_P;index++){
+		printf("%s\n",arrayofstr[index]);
+	}
 }
 
 /*
@@ -90,27 +97,27 @@ for(index=0;index<count && index<NUM_P;index++){
 * Sorts the array of strings, using bubblesort
 */
 void str_sort(const char * arrayofstr[], int numofstr){
-int index = 0;
-int index2 = 0;
-for(index=0;index<numofstr;index++){
-	for(index2=index+1;index2<numofstr;index2++){
-		if(strcmp(arrayofstr[index],arrayofstr[index2] > 0)){
-			swap(arrayofstr+index,arrayofstr+index2);
+	int index = 0;
+	int index2 = 0;
+	for(index=0;index<numofstr;index++){
+		for(index2=index+1;index2<numofstr;index2++){
+			if(strcmp(arrayofstr[index],arrayofstr[index2]) > 0){
+				swap(arrayofstr+index,arrayofstr+index2);
+			}
 		}
 	}
-}
 }
 
 /*
 *	Swap the strings
-* @p1 pointer to pointer to first string
-* @p2 pointer to pointer to second string
+* @p1 pointer to pointer to first string. the string itself is constant
+* @p2 pointer to pointer to second string. the string itself is constant
 * Swaps the strings
 */
 
-void swap(void **p1, void **p2){
-char *tmp = NULL;
-tmp=(char *)*p1;
-*p1=*p2;
-*p2=tmp;
+void swap(const char **p1, const char **p2){
+	char *tmp = NULL;
+	tmp=(char *)*p1;
+	*p1=*p2;
+	*p2=tmp;
 }
