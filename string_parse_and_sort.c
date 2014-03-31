@@ -16,6 +16,7 @@ int numwords(char *);	/* returns the number of words in a string */
 void str2words(char *,char **);	/* extracts words from a string and returns 
 			them as a array pointed to by the second parameter */
 int length(char *);	/* returns the length of an input string */
+void swap(char **,char **);	/* swaps values of two char pointers */
 
 /*
 * main function
@@ -23,14 +24,17 @@ int length(char *);	/* returns the length of an input string */
 void main(){
 	char *in=NULL;
 	char **words=NULL;
+	int i=0;
+	int j=0;
+	char *start=NULL;
+	int count=0;
 	in=(char *)malloc((sizeof(char)*BUF_LEN)+1);	
 	if(in==NULL){
 		printf("%s:%s:%d unable to allocate memory.	\	
 			will exit\n",__FILE__,__FUNCTION__,__LINE__);
 		exit(1);
 	}
-	char *start=in;
-	int count=0;
+	start=in;
 	while(1){
 		*in=getchar();
 		if(*in=='\n'){
@@ -53,10 +57,28 @@ void main(){
 		exit(1);
 	}
 	str2words(start,words);
-	int i=0;
-	for(;i<numwordsentered;i++){
+	for(i=0;i<numwordsentered;i++){
+		for(j=i+1;j<numwordsentered;j++){
+			if(length(*(words+i))>length(*(words+j))){
+				swap((words+i),(words+j));
+			}
+		}
+	}
+	for(i=0;i<numwordsentered;i++){
 		printf("%s\n",*words++);
 	}
+}
+
+/*
+* swap function
+* @p1 pointer to pointer to char
+* @p2 pointer to pointer to char
+*/
+void swap(char **p1,char **p2){
+	char *tmp=NULL;
+	tmp=*p1;
+	*p1=*p2;
+	*p2=tmp;
 }
 
 /*
@@ -103,18 +125,20 @@ void str2words(char *str,char **warray){
 				start=str;
 		}else{
 			*warray=(char *)malloc((sizeof(char)*count)+1);
-			if(warray==NULL){
+			if(*warray==NULL){
 				printf("%s:%s:%d unable to allocate memory.\ 
 				will exit\n",__FILE__,__FUNCTION__,__LINE__);
 				exit(1);
 			}
-			strncpy(*warray++,start,count);
+			strncpy(*warray,start,count);
+			*((*warray)+count)='\0';
+			*warray++;
 			num++;
 			count=0;
 		}
-		str++;
 		if(num==numwordsentered || *str=='\0')
 			break;
+		str++;
 	};
 }
 
@@ -125,7 +149,7 @@ void str2words(char *str,char **warray){
 */
 int length(char *word){
 	int count=0;
-	while(*word!='\0'){
+	while(*word++!='\0'){
 		count++;
 	}
 	return count;
