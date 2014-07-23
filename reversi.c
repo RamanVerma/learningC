@@ -45,8 +45,7 @@ void draw_board(){
     int row, col = 0;
     for(row = 0; row < 6; row++){
         for(col = 0; col < 6; col++){
-//            printf(" %c |", board[row][col].c);
-            printf(" %d |", (row * 6)+ col);
+            printf(" %c |", board[row][col].c);
         }
         printf("\n------------------------\n");
     }
@@ -109,48 +108,69 @@ char get_owner(int index){
 }
 /*
 * Finds the neighbors to a slot
+* index: the position of the slot
+* c: kind of neighbor to be searched
 */
-void find_neighbors(int * index){
+void find_neighbors(int * index, char c){
     int row, col, count = 0;
+    /*
+    * Initialize the neigbors array to a big value
+    */
     for(row = 0;row < 8; row++){
         *(neighbors + row) = 99;
     }
+    /*
+    * Get the board coordinates corresponding to the position
+    */
     row = (*index / 6);
     col = (*index % 6);
-    if((row - 1) >= 0 && (col - 1) >= 0 && (get_owner(((row - 1) * 6) + (col - 1)) == ' ')){
+    /*check north west*/
+    if((row - 1) >= 0 && (col - 1) >= 0 && (get_owner(((row - 1) * 6) + (col - 1)) == c)){
         *neighbors++ = ((row - 1) * 6) + (col - 1);
         count++;
     }
-    if((row - 1) >= 0 && (get_owner(((row - 1) * 6) + (col)) == ' ')){
+    /*check north*/
+    if((row - 1) >= 0 && (get_owner(((row - 1) * 6) + (col)) == c)){
         *neighbors++ = ((row - 1) * 6) + (col);
         count++;
     }
-    if((row - 1) >= 0 && (col + 1) < 6 && (get_owner(((row - 1) * 6) + (col + 1)) == ' ')){
+    /*check north east*/
+    if((row - 1) >= 0 && (col + 1) < 6 && (get_owner(((row - 1) * 6) + (col + 1)) == c)){
         *neighbors++ = ((row - 1) * 6) + (col + 1);
         count++;
     }
-    if((col - 1) >= 0 && (get_owner(((row) * 6) + (col - 1)) == ' ')){
+    /*check west*/
+    if((col - 1) >= 0 && (get_owner(((row) * 6) + (col - 1)) == c)){
         *neighbors++ = ((row) * 6) + (col - 1);
         count++;
     }
-    if((col + 1) < 6 && (get_owner(((row) * 6) + (col + 1)) == ' ')){
+    /*check east*/
+    if((col + 1) < 6 && (get_owner(((row) * 6) + (col + 1)) == c)){
         *neighbors++ = ((row) * 6) + (col + 1);
         count++;
     }
-    if((row + 1) < 6 && (col - 1) >= 0 && (get_owner(((row + 1) * 6) + (col - 1)) == ' ')){
+    /*check south west*/
+    if((row + 1) < 6 && (col - 1) >= 0 && (get_owner(((row + 1) * 6) + (col - 1)) == c)){
         *neighbors++ = ((row + 1) * 6) + (col - 1);
         count++;
     }
-    if((row + 1) < 6 && (get_owner(((row + 1) * 6) + (col)) == ' ')){
+    /*check south*/
+    if((row + 1) < 6 && (get_owner(((row + 1) * 6) + (col)) == c)){
         *neighbors++ = ((row + 1) * 6) + (col);
         count++;
     }
-    if((row + 1) < 6 && (col + 1) < 6 && (get_owner(((row + 1) * 6) + (col + 1)) == ' ')){
+    /*check south east*/
+    if((row + 1) < 6 && (col + 1) < 6 && (get_owner(((row + 1) * 6) + (col + 1)) == c)){
         *neighbors++ = ((row + 1) * 6) + (col + 1);
         count++;
     }
+    /*bring neighbors pointer to the first element of the dynamically allocated array*/
     neighbors = neighbors - count;
 }
+/*
+*
+*/
+
 /*
 * Best possible move for player(passed on as argument)
 */
@@ -177,12 +197,18 @@ int best_possible_move(char player){
             */
             index = (row * 6) + col;
             if(get_owner(index) == other_player(player)){
-                find_neighbors(&index);
+                /*
+                * Find the vacant neighboring slots
+                */
+                find_neighbors(&index, ' ');
                 /*
                 * Calculate the possible points to be won if a vacant neighboring
                 * slot is occupied.
                 */
                 for(n = 0;(neighbor = *(neighbors + n)) != 99;n++){
+
+//Refactor the code from here
+//int points(int pointA, int pointB, char player)
                     /*
                     * Get direction from this neighbor to the index
                     */
@@ -208,6 +234,9 @@ int best_possible_move(char player){
                         get_owner(neighbor + (direction * (steps + 1))) == player){
                         points[n_row][n_col] = (points[n_row][n_col] < steps) ? steps : points[n_row][n_col];
                     }
+
+//Take this much code in another function
+
                     /*
                     * Check if the just concluded slot can earn the max possible points
                     */
@@ -227,24 +256,50 @@ void main(){
     char usersign;
     init_board();
     neighbors = (int *)malloc(sizeof(int) * 8);
+    if(neighbors == NULL){
+        printf("Short on memory");
+        return;
+    }
     draw_board();
+    /*
+    * User has to select a sign for himself / herself. Computer will get the opposite sign.
+    */
     while(1){
         scanf("Select your sign. The only valid values are plus(+) or cross(x)", &usersign);
         if(usersign == '+' || usersign == 'x')
             break;
     }
-
+    /*
+    * Main loop for the game.
+    */
     while(){
+        /*
+        * Get the human's next move
+        */
         scanf("What is your next move. [0..35]", &move);
         if(move < 0 || move > 35 || get_owner(move) != ' '){
+            /*
+            * Invalid move. Input again
+            */
             printf("Wrong move. Provide a valid value on the board.");
             continue;
         }else{
-            board[move / 6][move % 6].c = usersign;
+            /*
+            * Valid move. 
+            * Mark the slot for human user and caclculate his points.
+            * Draw the board.
+            */
+            mark_slot(usersign, move);
             draw_board();
+            /*
+            * Get the best possible move for computer.
+            * Mark the slot and calculate computer's points.
+            * Draw the board.
+            */
             computers_move = best_possible_move(other_player(usersign));
-            board[computers_move / 6][computers_move % 6].c = other_player(usersign);
+            mark_slot(other_player(usersign), computers_move);
             computers_points += max_points;
+            draw_board();
         }
     }
 }
