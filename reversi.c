@@ -12,6 +12,8 @@ struct slot{
 struct slot board[6][6];
 int points[6][6];
 int *neighbors;
+int max_slot;
+int max_points;
 
 void init_board(){
     int row, col = 0;
@@ -35,7 +37,7 @@ enum compass{
     south = 6,
     southeast = 7
 };
-enum compass direction;
+
 /*
 * Draws the board in its current form
 */
@@ -84,14 +86,16 @@ bool mark_slot(char player, int index){
 * Direction is an integer defined in an enum variable
 * It is assumed that the board is a 6*6 square 
 */
-int get_direction(int pointA, int point B){
+int get_direction(int pointA, int pointB){
+    enum compass direction;
     direction = (pointA == pointB + 7) ? northwest : (
         (pointA == pointB + 6) ? north : (
             (pointA == pointB + 5) ? northeast : (
                 (pointA == pointB + 1) ? west : (
                     (pointA == pointB - 1) ? east : (
                         (pointA == pointB - 5) ? southwest : (
-                            (pointA == pointB - 7) ? southeast : 0))))))
+                            (pointA == pointB - 6) ? south : (
+                                (pointA == pointB - 7) ? southeast : 0)))))));
     return direction;
 }
 /*
@@ -151,40 +155,96 @@ void find_neighbors(int * index){
 * Best possible move for player(passed on as argument)
 */
 int best_possible_move(char player){
-    int row, col, index, n, neighbor = 0;
-    for(row = 0;row < 8;row++){
-        for(col =0;col < 8;col++){
-            points[row][col] = 0;
+    int row, col, index, n, neighbori, n_row, n_col = 0;
+    /*
+    * Create a matrix to store the possible points at every slot on the board
+    */
+    for(row = 0;row < 6;row++){
+        for(col =0;col < 6;col++){
+            points[row][col] = -1;
         }
     }
-    for(row = 0;row < 8;row++){
-        for(col =0;col < 8;col++){
-            index = (row* 6) + col;
-            n = 0;
+    max_slot = 0;
+    max_points = 0;
+    /*
+    * Iterate through every slot on the board
+    */
+    for(row = 0;row < 6;row++){
+        for(col = 0;col < 6;col++){
+            /*
+            * If the owner of any slot is the opposite player, get all his vacant
+            * neighboring slots.
+            */
+            index = (row * 6) + col;
             if(get_owner(index) == other_player(player)){
                 find_neighbors(&index);
-                while((neighbor = *(neighbors + n)) != 99){
-                    
-                    n++;
+                /*
+                * Calculate the possible points to be won if a vacant neighboring
+                * slot is occupied.
+                */
+                for(n = 0;(neighbor = *(neighbors + n)) != 99;n++){
+                    /*
+                    * Get direction from this neighbor to the index
+                    */
+                    int direction = 0;
+                    direction = get_direction(neighbor, index);
+                    /*
+                    * Calculate how far can we step in this direction.
+                    */
+                    int steps = 1;
+                    while((neighbor + (direction * steps)) < 36 &&
+                        (neighbor + (direction * steps)) >= 0 && 
+                        get_owner(neighbor + (direction * steps)) == other_player(player)){
+                        steps++;
+                    }
+                    /*
+                    * There should be a valid slot adjacent to the last step, and it must be
+                    * occupied by the player(passed as argument)
+                    */
+                    n_row = neighbor / 6;
+                    n_col = neighbor % 6;
+                    if((neighbor + (direction * (steps + 1))) < 36 &&
+                        (neighbor + (direction * (steps + 1))) >= 0 &&
+                        get_owner(neighbor + (direction * (steps + 1))) == player){
+                        points[n_row][n_col] = (points[n_row][n_col] < steps) ? steps : points[n_row][n_col];
+                    }
+                    /*
+                    * Check if the just concluded slot can earn the max possible points
+                    */
+                    if(points[n_row][n_col] > max_points){
+                        max_points = points[n_row][n_col];
+                        max_slot = neighbor;
+                    }
                 }
             }
         }
     }
-            index = (row * 6) + col;
-            find_neighbors(&index);
+    return max_slot;
 }
 
 void main(){
+    int move, computers_points = 0;
+    char usersign;
     init_board();
     neighbors = (int *)malloc(sizeof(int) * 8);
     draw_board();
-    
-    int index, row, col = 0;
-    for(row = 0; row < 6; row++){
-        for(col = 0; col < 6; col++){
-            index = (row * 6) + col;
-            find_neighbors(&index, '+');
-            printf("\n%d : %d, %d, %d, %d, %d, %d, %d, %d", index, *neighbors, *(neighbors+1), *(neighbors+2), *(neighbors+3), *(neighbors+4), *(neighbors+5), *(neighbors+6), *(neighbors+7));
+    while(1){
+        scanf("Select your sign. The only valid values are plus(+) or cross(x)", &usersign);
+        if(usersign == '+' || usersign == 'x')
+            break;
+    }
+
+    while(){
+        scanf("What is your next move. [0..35]", &move);
+        if(move < 0 || move > 35 || get_owner(move) != ' '){
+            printf("Wrong move. Provide a valid value on the board.");
+            continue;
+        }else{
+            board[move / 6][move % 6].c = usersign;
+            draw_board();
+            computers_move = best_possible_move(other_player(usersign));
+            board[computers_move / 6][computers_move % 6].c = other_player(usersign);
+            computers_points += max_points;
         }
     }
 }
