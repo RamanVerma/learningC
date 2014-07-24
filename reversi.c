@@ -14,7 +14,11 @@ int points[6][6];
 int *neighbors;
 int max_slot;
 int max_points;
-
+/*
+* initialize the board by clearing all the slots
+* Parameters:
+* None
+*/
 void init_board(){
     int row, col = 0;
     for(row = 0; row < 6; row++){
@@ -40,6 +44,8 @@ enum compass{
 
 /*
 * Draws the board in its current form
+* Parameters:
+* None
 */
 void draw_board(){
     int row, col = 0;
@@ -53,6 +59,8 @@ void draw_board(){
 /*
 * Convenience function to return the symbol for the 
 * opposition player
+* Parameter:
+* char player: player in question
 */
 char other_player(char player){
     if(player == '+'){
@@ -62,17 +70,22 @@ char other_player(char player){
     }
 }
 /*
-* mark a slot on the board
-* @player : player for whom to mark the slot
-* @index : location of the slot 
+* mark an empty slot on the board
+* Parameters:
+* char player : player for whom to mark the slot
+* int index : location of the slot 
 */
 bool mark_slot(char player, int index){
     int row, col = 0;
+    /*Convert the integer poisiton on the board to matrix co ordinates*/
     row = (index / 6);
     col = (index % 6);
+    /*Mark the empty slot*/
     if(board[row][col].c == ' '){
         board[row][col].c = (player == '+') ? '+' : 'x';
+        /*add to the count of corresponding player*/ 
         player == '+' ? plusses++ : crosses++;
+        /*Reduce the count on empty slots*/
         available_slots--;
         return true;
     }else{
@@ -83,7 +96,10 @@ bool mark_slot(char player, int index){
 * Gets the direction from point A to point B
 * Direction is relative to poistions of the slots on board
 * Direction is an integer defined in an enum variable
-* It is assumed that the board is a 6*6 square 
+* It is assumed that the board is a 6*6 square
+* Parameters:
+* int pointA: source index on the board
+* int pointB: destination index on the board
 */
 int get_direction(int pointA, int pointB){
     enum compass direction;
@@ -99,6 +115,8 @@ int get_direction(int pointA, int pointB){
 }
 /*
 * Gets the owner of a slot
+* Parameters:
+* int index: position of the slot
 */
 char get_owner(int index){
     int row, col = 0;
@@ -108,8 +126,9 @@ char get_owner(int index){
 }
 /*
 * Finds the neighbors to a slot
+* Parameters:
 * index: the position of the slot
-* c: kind of neighbor to be searched
+* char c: kind of neighbor/player to be searched
 */
 void find_neighbors(int * index, char c){
     int row, col, count = 0;
@@ -168,14 +187,37 @@ void find_neighbors(int * index, char c){
     neighbors = neighbors - count;
 }
 /*
-*
+* Get the maximum number of points for a player when treading
+* from pointA to pointB
+* Parameters: 
+* int pointA: starting index position
+* int pointB: starting index position
+* char player: player in question
 */
-
+int points(int pointA, int pointB, char player){
+    /*
+    * Get direction from this neighbor to the index
+    */
+    int direction = 0;
+    direction = get_direction(neighbor, index);
+    /*
+    * Calculate how far can we step in this direction.
+    */
+    int steps = 1;
+    while((neighbor + (direction * steps)) < 36 &&
+        (neighbor + (direction * steps)) >= 0 && 
+        get_owner(neighbor + (direction * steps)) == other_player(player)){
+        steps++;
+    }
+    return steps - 1;
+}
 /*
-* Best possible move for player(passed on as argument)
+* Best possible move for player
+* Argument: 
+* char player: player in question
 */
 int best_possible_move(char player){
-    int row, col, index, n, neighbori, n_row, n_col = 0;
+    int row, col, index, n, neighbori, n_row, n_col, steps = 0;
     /*
     * Create a matrix to store the possible points at every slot on the board
     */
@@ -206,37 +248,19 @@ int best_possible_move(char player){
                 * slot is occupied.
                 */
                 for(n = 0;(neighbor = *(neighbors + n)) != 99;n++){
-
-//Refactor the code from here
-//int points(int pointA, int pointB, char player)
-                    /*
-                    * Get direction from this neighbor to the index
-                    */
-                    int direction = 0;
-                    direction = get_direction(neighbor, index);
-                    /*
-                    * Calculate how far can we step in this direction.
-                    */
-                    int steps = 1;
-                    while((neighbor + (direction * steps)) < 36 &&
-                        (neighbor + (direction * steps)) >= 0 && 
-                        get_owner(neighbor + (direction * steps)) == other_player(player)){
-                        steps++;
-                    }
+                    steps = 0;
+                    steps = points(neighbor, index, player);
                     /*
                     * There should be a valid slot adjacent to the last step, and it must be
                     * occupied by the player(passed as argument)
                     */
                     n_row = neighbor / 6;
                     n_col = neighbor % 6;
-                    if((neighbor + (direction * (steps + 1))) < 36 &&
-                        (neighbor + (direction * (steps + 1))) >= 0 &&
-                        get_owner(neighbor + (direction * (steps + 1))) == player){
+                    if((neighbor + (direction * steps)) < 36 &&
+                        (neighbor + (direction * steps)) >= 0 &&
+                        get_owner(neighbor + (direction * steps)) == player){
                         points[n_row][n_col] = (points[n_row][n_col] < steps) ? steps : points[n_row][n_col];
                     }
-
-//Take this much code in another function
-
                     /*
                     * Check if the just concluded slot can earn the max possible points
                     */
