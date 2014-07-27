@@ -12,8 +12,17 @@ struct slot{
 struct slot board[6][6];
 int points[6][6];
 int *neighbors;
-int max_slot;
-int max_points;
+/*
+* This structure is used to convert slot owners
+*/
+struct convert{
+    int points; /*number of slots to be converted*/
+    int direction;  /*direction in which to move*/
+    int flip_start; /*start position of the conversion*/
+    int flip_end;   /*end position of the conversion*/
+    char player;   /*convert the ownership to this player*/
+};
+struct convert max;
 /*
 * initialize the board by clearing all the slots
 * Parameters:
@@ -74,15 +83,16 @@ char other_player(char player){
 * Parameters:
 * char player : player for whom to mark the slot
 * int index : location of the slot 
+* bool force : mark the slot, even hen it is not empty
 */
-bool mark_slot(char player, int index){
+bool mark_slot(char player, int index, bool force){
     int row, col = 0;
     /*Convert the integer poisiton on the board to matrix co ordinates*/
     row = (index / 6);
     col = (index % 6);
     /*Mark the empty slot*/
-    if(board[row][col].c == ' '){
-        board[row][col].c = (player == '+') ? '+' : 'x';
+    if((!force && board[row][col].c == ' ') || force){
+        board[row][col].c = player;
         /*add to the count of corresponding player*/ 
         player == '+' ? plusses++ : crosses++;
         /*Reduce the count on empty slots*/
@@ -187,26 +197,22 @@ void find_neighbors(int * index, char c){
     neighbors = neighbors - count;
 }
 /*
-* Get the maximum number of points for a player when treading
+* Get the maximum number of points/moves for a player when treading
 * from pointA to pointB
 * Parameters: 
 * int pointA: starting index position
 * int pointB: starting index position
+* int direction: direction from pointA to pointB
 * char player: player in question
 */
-int points(int pointA, int pointB, char player){
-    /*
-    * Get direction from this neighbor to the index
-    */
-    int direction = 0;
-    direction = get_direction(neighbor, index);
+int max_moves(int pointA, int pointB, int direction, char player){
     /*
     * Calculate how far can we step in this direction.
     */
     int steps = 1;
-    while((neighbor + (direction * steps)) < 36 &&
-        (neighbor + (direction * steps)) >= 0 && 
-        get_owner(neighbor + (direction * steps)) == other_player(player)){
+    while((pointA + (direction * steps)) < 36 &&
+        (pointA + (direction * steps)) >= 0 && 
+        get_owner(pointA + (direction * steps)) == other_player(player)){
         steps++;
     }
     return steps - 1;
@@ -217,7 +223,7 @@ int points(int pointA, int pointB, char player){
 * char player: player in question
 */
 int best_possible_move(char player){
-    int row, col, index, n, neighbori, n_row, n_col, steps = 0;
+    int row, col, index, direction, n, neighbor, n_row, n_col, steps = 0;
     /*
     * Create a matrix to store the possible points at every slot on the board
     */
@@ -226,8 +232,11 @@ int best_possible_move(char player){
             points[row][col] = -1;
         }
     }
-    max_slot = 0;
-    max_points = 0;
+    max.flip_start = -1;
+    max.flip_end = -1;
+    max.direction = 0;
+    max.points = -1;
+    max.player = player;
     /*
     * Iterate through every slot on the board
     */
@@ -248,35 +257,82 @@ int best_possible_move(char player){
                 * slot is occupied.
                 */
                 for(n = 0;(neighbor = *(neighbors + n)) != 99;n++){
+                    /*
+                    * Get direction from pointA to pointB
+                    */
+                    direction = get_direction(neighbor, index);
                     steps = 0;
-                    steps = points(neighbor, index, player);
+                    steps = max_moves(neighbor, index, direction, player);
                     /*
                     * There should be a valid slot adjacent to the last step, and it must be
                     * occupied by the player(passed as argument)
                     */
                     n_row = neighbor / 6;
                     n_col = neighbor % 6;
-                    if((neighbor + (direction * steps)) < 36 &&
-                        (neighbor + (direction * steps)) >= 0 &&
-                        get_owner(neighbor + (direction * steps)) == player){
+                    if((neighbor + (direction * (steps + 1))) < 36 &&
+                        (neighbor + (direction * (steps + 1))) >= 0 &&
+                        get_owner(neighbor + (direction * (steps + 1))) == player){
                         points[n_row][n_col] = (points[n_row][n_col] < steps) ? steps : points[n_row][n_col];
                     }
                     /*
                     * Check if the just concluded slot can earn the max possible points
                     */
-                    if(points[n_row][n_col] > max_points){
-                        max_points = points[n_row][n_col];
-                        max_slot = neighbor;
+                    printf("processing neighbor: %d to slot: %d\n", neighbor, index);
+                    printf("Before checking for the points at this slot: %d\n", points[n_row][n_col]);
+                    if(points[n_row][n_col] > max.points){
+                        max.points = points[n_row][n_col];
+                        max.direction = direction;
+                        max.flip_start = neighbor;
+                        max.flip_end = index;
                     }
+                    printf("After checking for the points at this slot: %d\n", points[n_row][n_col]);
                 }
             }
         }
     }
-    return max_slot;
+   printf("points to be gained: %d\n", max.points);
+   printf("slot to be marked: %d\n", max.flip_start);
+    if(max.flip_start == -1){
+        while(1){
+            int x = rand() % 36;
+            if(get_owner(x) == ' '){
+                max.points = 0;
+                max.direction = 0;
+                max.flip_start = x;
+                max.flip_end = x;
+                break;
+            }
+        };
+    }
+    return max.flip_start;
 }
-
+/*
+* flips the ownership for a range of slots 
+* defined by the variable of type convert
+* Parameters:
+* struct convert param: structure that defines the range to be converted
+*/
+void flip(struct convert param){
+    /*
+    * This is the case when we don't have anything to flip
+    */
+    if(param.direction == 0)
+        return;
+    int x = 1;
+    for(;x <= param.points; x++){
+        mark_slot(param.player, max.flip_start + (max.direction * x), true);
+    }
+}
+/*
+* main function
+* TODO: flip for human user
+* TODO: scoring
+* FIXME: the game ended without all slots having been filled
+* FIXME: scanf is bad idea to get user input. Some times it gets in infinite loop at 
+* when user gives an invalid move
+*/
 void main(){
-    int move, computers_points = 0;
+    int move, computers_points, computers_move, slots_filled = 0;
     char usersign;
     init_board();
     neighbors = (int *)malloc(sizeof(int) * 8);
@@ -284,23 +340,24 @@ void main(){
         printf("Short on memory");
         return;
     }
-    draw_board();
     /*
     * User has to select a sign for himself / herself. Computer will get the opposite sign.
     */
     while(1){
-        scanf("Select your sign. The only valid values are plus(+) or cross(x)", &usersign);
+        printf("Select your sign. The only valid values are plus(+) or cross(x)\n");
+        scanf("%c", &usersign);
         if(usersign == '+' || usersign == 'x')
             break;
     }
     /*
     * Main loop for the game.
     */
-    while(){
+    while(available_slots > 0){
         /*
         * Get the human's next move
         */
-        scanf("What is your next move. [0..35]", &move);
+        printf("What is your next move. [0..35]\n");
+        scanf("%d", &move);
         if(move < 0 || move > 35 || get_owner(move) != ' '){
             /*
             * Invalid move. Input again
@@ -313,16 +370,23 @@ void main(){
             * Mark the slot for human user and caclculate his points.
             * Draw the board.
             */
-            mark_slot(usersign, move);
+            mark_slot(usersign, move, false);
             draw_board();
+            /*
+            * Last slot has been filled
+            */
+            if(available_slots == 0)
+                continue;
             /*
             * Get the best possible move for computer.
             * Mark the slot and calculate computer's points.
             * Draw the board.
             */
             computers_move = best_possible_move(other_player(usersign));
-            mark_slot(other_player(usersign), computers_move);
-            computers_points += max_points;
+            printf("Computer will mark slot: %d\n", computers_move);
+            mark_slot(other_player(usersign), computers_move, false);
+            flip(max);
+            computers_points += max.points;
             draw_board();
         }
     }
