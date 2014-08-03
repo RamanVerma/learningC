@@ -1,4 +1,8 @@
 /*
+ * Beginning C - From Novice to Professional - Fourth Edition
+ * Ivor Horton
+ * Exercise 11.2
+ *
  * This program demonstrates a linked list.
  * A structure type is defined to hold the first and last names of a person
  * along with his/her phone number.
@@ -14,13 +18,32 @@
 
 /*phone book structure*/
 struct phonebook{
-    char fname[10];   /*first name*/
-    char lname[10];   /*last name*/
-    char phone[10];   /*phone number*/
+    char fname[11];   /*first name*/
+    char lname[11];   /*last name*/
+    char phone[11];   /*phone number*/
     struct phonebook *next; /*pointer to next structure*/
 };
 
 struct phonebook *firstentry;   /*pointer to the first entry in the list*/
+
+/*
+ * get_input_from_console()   gets the input from stdin into the buffer
+ * @buffer: buffer to hold the input
+ *
+ * returns the pointer to the buffer
+ */
+char *get_input_from_console(char *buffer){
+    int index = 0;
+    char *ptr = NULL;
+    ptr = buffer;
+    if(buffer == NULL)
+        return buffer;
+    while(((*(ptr + index) = getchar()) != '\n') && (index < (sizeof(buffer) - 1))){
+        index++;
+    }
+    *(ptr + index + 1) = '\0';
+    return buffer;
+}
 
 /*
  * searchbyname()     search phone number, given the first and last names
@@ -64,17 +87,29 @@ struct phonebook *searchbynumber(char *number){
  * main function
  */
 void main(){
-    char more;
+    char *more;
     char option;
+    int err;
     bool done = false;
-    char first[10];
-    char last[10];
-    char phone[10];
+    char first[11];
+    char last[11];
+    char phone[11];
     struct phonebook *entry = NULL;
     struct phonebook *lastentry = NULL;
-    printf("Do you want to enter data to the phone book. (y/n): ");
-    more=getchar();
-    while(more == 'y' || tolower(more) == 'y'){
+    /*
+     * Allocate memory
+     */
+    more = (char *)malloc(sizeof(char) * 2);
+    if(more == NULL){
+        printf("Failed to allocate memory");
+        return;
+    }
+    printf("Do you want to enter data to the phone book. (y/n): \n");
+//    fgets(more, sizeof(more), stdin);
+//    err = fflush(stdin);  /*fflush() flushes stray newline char left in buffer*/
+    get_input_from_console(more);
+
+    while(more[0] == 'y' || more[0] == 'Y'){
         /*
          * Allocate memory for new entry and check if allocation succeded
          */
@@ -84,12 +119,21 @@ void main(){
             return;
         }
         /*Enter the information for this entry*/
-        printf("Enter the first name: ");
-        fgets(entry->fname, sizeof(entry->fname),stdin);
-        printf("Enter the last name: ");
-        fgets(entry->lname, sizeof(entry->lname),stdin);
-        printf("Enter the phone number: ");
-        fgets(entry->phone, sizeof(entry->phone),stdin);
+        printf("Enter the first name: \n");
+//        fgets(entry->fname, sizeof(entry->fname),stdin);
+//        err = fflush(stdin);  /*fflush() flushes stray newline char left in buffer*/
+        get_input_from_console(entry->fname);
+
+        printf("Enter the last name: \n");
+//        fgets(entry->lname, sizeof(entry->lname),stdin);
+//        err = fflush(stdin);  /*fflush() flushes stray newline char left in buffer*/
+        get_input_from_console(entry->lname);
+
+        printf("Enter the phone number: \n");
+//        fgets(entry->phone, sizeof(entry->phone),stdin);
+//        err = fflush(stdin);  /*fflush() flushes stray newline char left in buffer*/
+        get_input_from_console(entry->phone);
+
         entry->next = NULL;
         /*Add this entry to the linked list*/
         if(firstentry == NULL){
@@ -98,8 +142,12 @@ void main(){
             lastentry->next = entry;
         }
         lastentry = entry;
-        printf("Do you want to enter data to the phone book. (y/n): ");
-        more=getchar();
+
+        printf("Do you want to enter data to the phone book. (y/n): \n");
+//        err = fflush(stdin);  /*fflush() flushes stray newline char left in buffer*/
+//        fgets(more, sizeof(more), stdin);
+//        err = fflush(stdin);  /*fflush() flushes stray newline char left in buffer*/
+        get_input_from_console(more);
     }
     /*
      * Now ask the user if he/she wants to search by name/number
@@ -109,12 +157,16 @@ void main(){
         printf("B: Search by phone number.\n");
         printf("*: Quit.\n");
         option = getchar();
+        err = fflush(stdin);  /*gets rid of the stray newline char in stdin buffer*/
         switch(tolower(option)){
             case 'a':   /*searchbyname*/
                 printf("Enter the first name: \n");
+                err = fflush(stdin);
                 fgets(first, sizeof(first),stdin);
+                err = fflush(stdin);
                 printf("Enter the last name: \n");
                 fgets(last, sizeof(last),stdin);
+                err = fflush(stdin);
                 entry = NULL;
                 entry = searchbyname(first, last);
                 if(entry != NULL){
@@ -126,6 +178,7 @@ void main(){
             case 'b':   /*searchbynumber*/
                 printf("Enter the phone number: ");
                 fgets(phone, sizeof(phone),stdin);
+                err = fflush(stdin);
                 entry = NULL;
                 entry = searchbynumber(phone);
                 if(entry != NULL){
@@ -138,7 +191,5 @@ void main(){
                 done = true;
                 break;
         }
-
     }
-
 }
