@@ -16,8 +16,10 @@
 #include<stdio.h>
 #include<string.h>
 #include<stdlib.h>
+
 /*max length for first or last name*/
 #define MAX_NAME_LEN 10
+
 /*structure for each node of the binary search tree*/
 struct person{
    char fname[MAX_NAME_LEN];
@@ -25,23 +27,35 @@ struct person{
    struct person *left;
    struct person *right;
 };
+
 /*
  * buffers for data processing
  */
 char *fullname1 = NULL;
 char *fullname2 = NULL;
+
 /*
  * bstree_insert()  inserts a node into the binary search tree
  * @root:   the root node of this tree
  * @node:   the node to be inserted into the tree
  */
 void bstree_insert(struct person* entry, struct person *root){
+    /*
+     * initialize memory locations that will hold concatenated
+     * names of a person
+     */
     memset(fullname1, '\0', sizeof(fullname1));
     memset(fullname2, '\0', sizeof(fullname2));
-    fullname1 = strcat(entry->fname, entry->lname);
-    fullname2 = strcat(root->fname, root->lname);
-    printf("entry full name: %s\n", fullname1);
-    printf("root full name: %s\n", fullname2);
+    /*
+     * copy the new person's name to initialized memory location
+     */
+    fullname1 = strncpy(fullname1, entry->lname, strlen(entry->lname));
+    fullname1 = strcat(fullname1, entry->fname);
+    /*
+     * copy the root's name to the initialized memory location
+     */
+    fullname2 = strncpy(fullname2, root->lname, strlen(root->lname));
+    fullname2 = strcat(fullname2, root->fname);
     /*
      * make recursive calls to find correct place for this entry
      */
@@ -53,18 +67,47 @@ void bstree_insert(struct person* entry, struct person *root){
             root->left = entry;
         else
             bstree_insert(entry, root->left);
+            return;
     }
     /*
      * process left child
      */
-    if(strcmp(fullname1, fullname2) < 0){
+    if(strcmp(fullname1, fullname2) > 0){
         if(root->right == NULL)
             root->right = entry;
         else
             bstree_insert(entry, root->right);
+            return;
+    }
+}
+
+/*
+ * bstree_ascending_traversal()     traverses the tree in ascending order
+ * @root: root node of the tree
+ *
+ * traverses the tree visitng in the following order
+ * left node > root node > right node
+ */
+void bstree_ascending_traversal(struct person* entry){
+    /*
+     * visit the left node, if it exists
+     */
+    if(entry->left != NULL){
+        bstree_ascending_traversal(entry->left);
+    }
+    /*
+     * print the name of this node
+     */
+    printf("%s, %s\n", entry->lname, entry->fname);
+    /*
+     * visit the right node, if it exists
+     */
+    if(entry->right != NULL){
+        bstree_ascending_traversal(entry->right);
     }
     return;
 }
+
 /*
  * main function
  */
@@ -141,26 +184,27 @@ void main(){
             strncpy(entry->lname, ptr, count);
         }
         /*
-         * if the tree is empty, assign the entry to root
-         * and return
-         */
-        if(root == NULL){
-            root = entry;
-            return;
-        }
-        /*
-         * store the entry into binary search tree
-         */
-        bstree_insert(entry, root);
-        /*
          * assign the left and right nodes NULL for now
          */
         entry->left = NULL;
         entry->right = NULL;
 
+        /*
+         * if the tree is empty, assign the entry to root
+         * and return
+         */
+        if(root == NULL){
+            root = entry;
+        }else{
+        /*
+         * store the entry into binary search tree
+         */
+            bstree_insert(entry, root);
+        }
         ptr = NULL;
-        
-//        printf("fname: %s\n", entry->fname);
-//        printf("lname: %s\n", entry->lname);
     }while(1);
+    /*
+     * Print the tree
+     */
+    bstree_ascending_traversal(root);
 }
