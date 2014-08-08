@@ -11,9 +11,9 @@
 #include<stdlib.h>
 
 /*
- * maximum length of the tag
+ * maximum length of the tag. currently limited to 1
  */
-#define TAG_LEN 10
+#define TAG_LEN 1
 /*
  * structure that defines the data input by the user
  */
@@ -31,8 +31,11 @@ data *entry = NULL;
 data *last = NULL;
 
 int count = 0;
+int nrows = 0;
+int ncols = 0;
 double uservalue = 0.0;
 double max = 0.0;
+int numcols = 0;
 char *ptr = NULL;
 
 /*
@@ -95,8 +98,10 @@ bool get_user_data(){
     }
     /*
      * storing the max value entered by the user
+     * increment the count to track number of cols
      */
     max = (last->value > max) ? last->value : max;
+    numcols++;
     /*
      * accept tag for this data
      */
@@ -120,9 +125,70 @@ bool get_user_data(){
  * draws a bar chart for the data from the linked list
  * chart is drwan according to the screen dimensions specified
  * by the user
+ * returns 0 for success and 1 for any errors
  */
-void draw_bar_chart(data *head){
-    return;
+int draw_bar_chart(data *head){
+    int height = nrows;
+    int x = 0;
+    double scalefactor = max / (nrows - 1);
+    /*
+     * create an array of characters to represent the bars
+     * initialize the array with spaces
+     */
+    char *pattern = (char *)malloc(sizeof(char) * numcols * 2);
+    if(pattern == NULL){
+        printf("Failed to allocate memory\n");
+        return 1;
+    }
+    memset(pattern, ' ', sizeof(pattern));
+    /*
+     * iterate over each row. Think of it as drawing a skyline
+     * top to down
+     */
+    for(height = nrows;height > 0; height--){
+        x = 0;
+        /*
+         * now draw the pattern of the skyline at this height
+         */
+        entry = head;
+        while(entry != NULL){
+            /*
+             * value at any linked list node is compared to the 
+             * current height of the sky scraper times the 
+             * scaling factor.
+             */
+            if(entry->value >= (height * scalefactor)){
+                *(pattern + x) = '#';
+            }
+            x+=2;
+            entry = entry->next;
+        }
+        /*
+         * print the pattern for this height
+         */
+        printf("%s\n", pattern);
+    }
+    /*
+     * now write down the tags
+     */
+    x = 0;
+    entry = head;
+    while(entry != NULL){
+        /*
+         * value at any linked list node is compared to the 
+         * current height of the sky scraper times the 
+         * scaling factor.
+         */
+        strncpy((pattern + x), entry->tag, TAG_LEN);
+        x+=2;
+        entry = entry->next;
+    }
+    /*
+     * print the tags
+     */
+    printf("%s\n", pattern);
+
+    return 0;
 }
 
 /*
@@ -133,8 +199,9 @@ void main(){
     int cols = 0;
     /*
      * memory buffer to hold user input temporarily
+     * FIXME hard coded value here '6'
      */
-    ptr = (char *)malloc(sizeof(char) * TAG_LEN);
+    ptr = (char *)malloc(sizeof(char) * 6);
     if(ptr == NULL){
         printf("Failed to allocate memory\n");
         return;
@@ -145,19 +212,19 @@ void main(){
      */
     while(get_user_data());
     /*
-     * iterate through the linked list and process data
+     * ask for the number of height and width of the output
+     * right now, I just assume that the width would be sufficient
+     * for all the columns to be displayed
      */
-    entry = head;
-    while(entry != NULL){
-        printf("value %f , tag %s\n", entry->value, entry->tag);
-        /*
-         * point to the next entry in the list
-         */
-        entry = entry->next;
-    }
     printf("Enter the number of rows to be used for the display\n");
     scanf("%d", &rows);
+    nrows = (rows < 2) ? 100 : rows;
     printf("Enter the number of cols to be used for the display\n");
     scanf("%d", &cols);
-
+    ncols = cols;
+    /*
+     * we have all the info. draw the bar chart
+     */
+    draw_bar_chart(head);
+    return;
 }
