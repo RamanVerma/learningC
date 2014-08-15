@@ -1,0 +1,77 @@
+Thi document tries to list out various input output functions
+that are used with standard C libraries, for quick reference.
+
+====Input functions
+-int scanf()   this function is used to get any kind of input
+    from stdin buffered stream.
+    Defined at stdio.h
+    Returns the number of characters actually stored in various
+    arguments.
+    The first argument to scanf() function is a format 
+    specifier string. The format specifier string will specify 
+    the number and kind of variable arguments to follow.
+
+    The general format for a format specifier looks like:
+    %*<field_width><h or l or L or LL><conversion_character>
+    '%' indicates start of a format specifier
+    '*' indicates that the next input type should be consumed
+    from the input stream but we do not specify an input
+    variable to hold this input value. If a integer is 
+    specified after '*', then only that many characters are
+    skipped, otherwise all the characters belonging to the
+    following conversion character will be skipped.
+    'field_width' is an integer that specifies the length of
+    input value
+    'h' = short, 'l or L' = long , 'll' = long long
+    'conversion_character' defines the type to input to expect
+
+    Never use anything before the '%' character because then
+    scanf will expect that the input will start with exactly 
+    the same character sequence as has been specified before
+    '%'. 
+    Example 1: "\n%d" will entail the useer to enter a 
+    new line character before she enters the integer.
+    Example 2: "Enter the input:%d" will entail that the user
+    writers her input as "Enter the input:999", which is non
+    sense. If the user just enters "999", scanf will think of
+    it as input error.
+
+    If you want to accept only certain characters in the user 
+    input, specify the required/desired characters inside a 
+    square bracket as in '%[abcde]'. This example will 
+    entertain only the characters a,b,c,d,e and scanf will stop
+    processing the input stream at the first deviation from
+    these characters.
+    Similarly, to exclude a certain set of characters from input,
+    use '%[^abc]'. This will exclude a,b,c from input stream.
+
+    While processing the user input, if scanf() gets invalid 
+    data(corresponding to the conversion char), it will stop and
+    will not process anything for the rest of the arguments.
+
+-char *gets(char *str)  will read a string from stdin and store
+    it at str.
+
+    the downside of this convenience function for reading 
+    strings is that it will read as many characters as the user
+    enters, so its upto the program may get segmentation fault
+    or overwrite some data.
+    
+    this function will replace the ending new line charcter 
+    with a null '\0' charcter.
+
+-fgets(char *str, sizeof(str), <name of input stream>)
+    fgets is an improvement over gets, as in here you specify the
+    number of characters to be read and the input stream.
+
+    fgets will not replace the ending new line charcater, if
+    any, with the null character. It will add the null char to the
+    end though.
+
+    fflush(<input stream>) should be used wth fgets to flush the
+    input stream of any spurious characters after the required 
+    characters have been consumed by fgets
+
+-getchar()
+
+-ungetc()
